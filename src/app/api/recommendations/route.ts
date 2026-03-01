@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
     // 7. Fetch pages 1–3 in parallel (offset by pageOffset for refresh)
     let movies = await discoverMoviesMultiPage(discoverParams, 3, 1 + pageOffset);
 
-    // 8. Fallback tier 1: if < 5 results and keywords were applied, retry without keywords (keep providers)
-    if (movies.length < 5 && keywordIds.length > 0) {
+    // 8. Fallback tier 1: if < 10 results and keywords were applied, retry without keywords (keep providers)
+    if (movies.length < 10 && keywordIds.length > 0) {
       const noKeywordParams = {
         with_genres: genreIds.slice(0, 3).join('|'),
         sort_by: sortBy,
@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
       movies = await discoverMoviesMultiPage(noKeywordParams, 3);
     }
 
-    // 9. Fallback tier 2: if still < 5 and providers were set, retry without providers
-    if (movies.length < 5 && providerIds.length > 0) {
+    // 9. Fallback tier 2: if still < 10 and providers were set, retry without providers
+    if (movies.length < 10 && providerIds.length > 0) {
       const noProviderParams = {
         with_genres: genreIds.slice(0, 3).join('|'),
         sort_by: sortBy,
@@ -117,8 +117,8 @@ export async function POST(request: NextRequest) {
       movies = await discoverMoviesMultiPage(noProviderParams, 3);
     }
 
-    // 10. Fallback tier 3: if still < 5, retry with fewer genres and lower thresholds
-    if (movies.length < 5) {
+    // 10. Fallback tier 3: if still < 10, retry with fewer genres and lower thresholds
+    if (movies.length < 10) {
       const fallbackParams = {
         with_genres: genreIds.slice(0, 2).join('|'),
         sort_by: sortBy,

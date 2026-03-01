@@ -50,7 +50,7 @@ export function StepImageSelector({ onComplete }: StepImageSelectorProps) {
         animate="animate"
         className="grid grid-cols-2 md:grid-cols-5 gap-3"
       >
-        {QUIZ_IMAGES.map((image) => {
+        {QUIZ_IMAGES.filter((img) => !img.questionOnly).map((image) => {
           const isSelected = selected === image.id;
           return (
             <motion.button

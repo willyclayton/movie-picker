@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import type { QuizAnswer, QuizState, MoodCoordinate } from '@/types/quiz';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 export function useQuizState() {
   const [state, setState] = useState<QuizState>({

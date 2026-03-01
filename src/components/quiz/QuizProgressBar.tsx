@@ -3,14 +3,14 @@
 import { motion } from 'framer-motion';
 import { CINEMATIC_EASE } from '@/lib/animations';
 
-const STEP_LABELS = ['Vibe', 'Scene', 'Weather', 'Animal', 'Tags', 'You'];
+const STEP_LABELS = ['Vibe', 'Scene', 'Weather', 'Animal', 'Feel', 'Tags', 'You'];
 
 type QuizProgressBarProps = {
   currentStep: number;
   totalSteps?: number;
 };
 
-export function QuizProgressBar({ currentStep, totalSteps = 6 }: QuizProgressBarProps) {
+export function QuizProgressBar({ currentStep, totalSteps = 7 }: QuizProgressBarProps) {
   return (
     <div className="w-full max-w-sm mx-auto" role="progressbar" aria-valuenow={currentStep + 1} aria-valuemax={totalSteps}>
       <div className="flex items-center gap-2">

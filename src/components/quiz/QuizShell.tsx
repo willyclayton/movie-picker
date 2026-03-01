@@ -25,6 +25,7 @@ const STEPS: ((props: StepProps) => React.ReactElement)[] = [
   (props) => <StepImageSelector {...props} />,
   (props) => <StepProjectiveQ {...props} questionIndex={0} />,
   (props) => <StepProjectiveQ {...props} questionIndex={1} />,
+  (props) => <StepProjectiveQ {...props} questionIndex={2} />,
   (props) => <StepKeywords {...props} />,
   (props) => <StepMetaPref {...props} />,
 ];
@@ -65,7 +66,7 @@ export function QuizShell({ currentStep, onAnswer, onBack }: QuizShellProps) {
 
       {/* Step counter */}
       <p className="text-center text-muted text-xs font-sans mt-8">
-        {currentStep + 1} of 6
+        {currentStep + 1} of {STEPS.length}
       </p>
     </div>
   );
