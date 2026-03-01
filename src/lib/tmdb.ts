@@ -44,6 +44,46 @@ export async function discoverMoviesMultiPage(
   return results.flat();
 }
 
+type MovieExtras = {
+  imdbId: string | null;
+  trailerUrl: string | null;
+};
+
+/**
+ * Fetch IMDB ID and official YouTube trailer for a movie in one call.
+ * Uses append_to_response to avoid extra round-trips.
+ */
+export async function getMovieExtras(id: number): Promise<MovieExtras> {
+  const apiKey = getApiKey();
+  const url = `${BASE_URL}/movie/${id}?api_key=${apiKey}&append_to_response=external_ids,videos`;
+
+  try {
+    const res = await fetch(url, { next: { revalidate: 86400 } });
+    if (!res.ok) return { imdbId: null, trailerUrl: null };
+
+    const data = await res.json();
+
+    const imdbId: string | null = data.external_ids?.imdb_id ?? null;
+
+    // Prefer official trailers, fall back to any trailer, then teasers
+    const videos: { type: string; site: string; official?: boolean; key: string }[] =
+      data.videos?.results ?? [];
+
+    const trailer =
+      videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube' && v.official) ??
+      videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube') ??
+      videos.find((v) => v.type === 'Teaser' && v.site === 'YouTube');
+
+    const trailerUrl = trailer
+      ? `https://www.youtube.com/watch?v=${trailer.key}`
+      : null;
+
+    return { imdbId, trailerUrl };
+  } catch {
+    return { imdbId: null, trailerUrl: null };
+  }
+}
+
 export function getTMDBImageUrl(
   path: string | null,
   size: 'w342' | 'w500' | 'w780' | 'original' = 'w500'

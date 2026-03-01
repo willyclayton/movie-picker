@@ -1,11 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { computeFinalCoordinate } from '@/lib/circumplex';
-import { discoverMoviesMultiPage } from '@/lib/tmdb';
+import { discoverMoviesMultiPage, getMovieExtras } from '@/lib/tmdb';
 import { enrichWithStreaming } from '@/lib/streaming';
+import { getRTScores } from '@/lib/omdb';
 import { selectGenres } from '@/data/circumplex';
 import { deduplicateBy, shuffle } from '@/lib/utils';
 import type { QuizAnswer } from '@/types/quiz';
-import type { EnrichedMovie } from '@/types/tmdb';
+import type { EnrichedMovie, TMDBMovie } from '@/types/tmdb';
+
+async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: string): Promise<EnrichedMovie> {
+  // Fetch TMDB extras (IMDB ID + trailer) and streaming in parallel
+  const [extras, streamingResult] = await Promise.all([
+    getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null })),
+    enrichWithStreaming([movie])
+      .then((r) => r[0]?.streamingInfo ?? null)
+      .catch(() => null),
+  ]);
+
+  // Fetch RT scores if we have an IMDB ID and OMDB key
+  const rtScores = extras.imdbId
+    ? await getRTScores(extras.imdbId).catch(() => null)
+    : null;
+
+  // Fallback trailer: YouTube search
+  const trailerUrl =
+    extras.trailerUrl ??
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' trailer')}`;
+
+  return {
+    ...movie,
+    toneLabel,
+    framingLabel,
+    streamingInfo: streamingResult,
+    tomatometer: rtScores?.tomatometer ?? null,
+    imdbScore: rtScores?.imdb ?? null,
+    trailerUrl,
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,21 +78,15 @@ export async function POST(request: NextRequest) {
       movies = await discoverMoviesMultiPage(fallbackParams, 2);
     }
 
-    // 7. Deduplicate and shuffle
+    // 7. Deduplicate and shuffle, take 10
     const unique = deduplicateBy(movies, (m) => m.id);
     const shuffled = shuffle(unique);
     const selected = shuffled.slice(0, 10);
 
-    // 8. Enrich with streaming info (parallel, fail gracefully)
-    const enriched = await enrichWithStreaming(selected);
-
-    // 9. Attach tone + framing to each
-    const result: EnrichedMovie[] = enriched.map((m) => ({
-      ...m,
-      toneLabel,
-      framingLabel: framingTemplate,
-      streamingInfo: m.streamingInfo,
-    }));
+    // 8. Enrich all movies in parallel (TMDB extras + streaming + RT scores)
+    const result = await Promise.all(
+      selected.map((movie) => enrichMovie(movie, toneLabel, framingTemplate))
+    );
 
     return NextResponse.json({
       movies: result,

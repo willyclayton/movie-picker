@@ -31,6 +31,11 @@ export type EnrichedMovie = TMDBMovie & {
   framingLabel: string;
   toneLabel: string;
   streamingInfo?: StreamingResult | null;
+  // RT / IMDB scores (populated if OMDB_API_KEY is set)
+  tomatometer: string | null;   // e.g. "94%"
+  imdbScore: string | null;     // e.g. "8.5"
+  // Trailer — YouTube URL if found, null otherwise
+  trailerUrl: string | null;
 };
 
 export type StreamingResult = {
