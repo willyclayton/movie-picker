@@ -21,14 +21,20 @@ export function useRecommendations() {
     error: null,
   });
 
-  const fetchRecommendations = useCallback(async (answers: QuizAnswer[], platforms?: string[]) => {
+  const [storedAnswers, setStoredAnswers] = useState<QuizAnswer[]>([]);
+  const [storedPlatforms, setStoredPlatforms] = useState<string[]>([]);
+  const [pageOffset, setPageOffset] = useState(0);
+
+  const fetchRecommendations = useCallback(async (answers: QuizAnswer[], platforms: string[] = [], offset: number = 0) => {
+    setStoredAnswers(answers);
+    setStoredPlatforms(platforms);
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const response = await fetch('/api/recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers, platforms }),
+        body: JSON.stringify({ answers, platforms, pageOffset: offset }),
       });
 
       if (!response.ok) {
@@ -58,5 +64,11 @@ export function useRecommendations() {
     [fetchRecommendations]
   );
 
-  return { ...state, fetchRecommendations, retry };
+  const refresh = useCallback(() => {
+    const nextOffset = pageOffset + 3;
+    setPageOffset(nextOffset);
+    fetchRecommendations(storedAnswers, storedPlatforms, nextOffset);
+  }, [pageOffset, storedAnswers, storedPlatforms, fetchRecommendations]);
+
+  return { ...state, fetchRecommendations, retry, refresh };
 }

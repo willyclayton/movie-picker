@@ -34,10 +34,11 @@ export async function discoverMovies(params: TMDBDiscoverParams): Promise<TMDBMo
 
 export async function discoverMoviesMultiPage(
   params: TMDBDiscoverParams,
-  pages: number = 3
+  pages: number = 3,
+  startPage: number = 1
 ): Promise<TMDBMovie[]> {
   const pageRequests = Array.from({ length: pages }, (_, i) =>
-    discoverMovies({ ...params, page: i + 1 }).catch(() => [] as TMDBMovie[])
+    discoverMovies({ ...params, page: startPage + i }).catch(() => [] as TMDBMovie[])
   );
 
   const results = await Promise.all(pageRequests);
@@ -99,11 +100,16 @@ export async function getMovieExtras(id: number): Promise<MovieExtras> {
 
     const usProviders = data['watch/providers']?.results?.US ?? {};
     const regionLink: string | undefined = usProviders.link;
+    const seen = new Set<string>();
     const watchProviders: StreamingService[] = [
       ...(usProviders.flatrate ?? []).map((p: { provider_name: string }) => ({ name: normalizeProviderName(p.provider_name), type: 'subscription' as const, link: regionLink })),
       ...(usProviders.rent ?? []).map((p: { provider_name: string }) => ({ name: normalizeProviderName(p.provider_name), type: 'rent' as const, link: regionLink })),
       ...(usProviders.buy ?? []).map((p: { provider_name: string }) => ({ name: normalizeProviderName(p.provider_name), type: 'buy' as const, link: regionLink })),
-    ].slice(0, 4);
+    ].filter((p) => {
+      if (seen.has(p.name)) return false;
+      seen.add(p.name);
+      return true;
+    }).slice(0, 4);
 
     return { imdbId, trailerUrl, runtime, watchProviders };
   } catch {

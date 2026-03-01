@@ -9,14 +9,19 @@ import { deduplicateBy, shuffle } from '@/lib/utils';
 import type { QuizAnswer } from '@/types/quiz';
 import type { EnrichedMovie, TMDBMovie } from '@/types/tmdb';
 
-async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: string): Promise<EnrichedMovie> {
+async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: string, selectedPlatforms: string[]): Promise<EnrichedMovie> {
   // Fetch TMDB extras (IMDB ID + trailer + runtime + watch providers)
   const extras = await getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null, runtime: null, watchProviders: [] }));
 
-  // Use TMDB watch providers as primary source; fall back to streaming API if empty
+  // Filter providers to user's selected platforms (when any were selected)
+  const filtered = selectedPlatforms.length > 0
+    ? extras.watchProviders.filter((p) => selectedPlatforms.includes(p.name))
+    : extras.watchProviders;
+
+  // Use filtered TMDB watch providers as primary source; fall back to streaming API if empty
   const streamingResult =
-    extras.watchProviders.length > 0
-      ? { services: extras.watchProviders }
+    filtered.length > 0
+      ? { services: filtered }
       : await enrichWithStreaming([movie]).then((r) => r[0]?.streamingInfo ?? null).catch(() => null);
 
   // Fetch RT scores if we have an IMDB ID and OMDB key
@@ -47,6 +52,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const answers: QuizAnswer[] = body.answers ?? [];
     const platforms: string[] = body.platforms ?? [];
+    const pageOffset: number = body.pageOffset ?? 0;
     const providerIds = platforms
       .map((key) => PLATFORMS.find((p) => p.key === key)?.providerId)
       .filter((id): id is number => id !== undefined);
@@ -85,8 +91,8 @@ export async function POST(request: NextRequest) {
       ...providerFilter,
     };
 
-    // 7. Fetch pages 1–3 in parallel
-    let movies = await discoverMoviesMultiPage(discoverParams, 3);
+    // 7. Fetch pages 1–3 in parallel (offset by pageOffset for refresh)
+    let movies = await discoverMoviesMultiPage(discoverParams, 3, 1 + pageOffset);
 
     // 8. Fallback tier 1: if < 5 results and keywords were applied, retry without keywords (keep providers)
     if (movies.length < 5 && keywordIds.length > 0) {
@@ -129,7 +135,7 @@ export async function POST(request: NextRequest) {
 
     // 12. Enrich all movies in parallel (TMDB extras + streaming + RT scores)
     const result = await Promise.all(
-      selected.map((movie) => enrichMovie(movie, toneLabel, framingTemplate))
+      selected.map((movie) => enrichMovie(movie, toneLabel, framingTemplate, platforms))
     );
 
     return NextResponse.json({

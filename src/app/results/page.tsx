@@ -15,7 +15,8 @@ export default function ResultsPage() {
   const [phase, setPhase] = useState<Phase>('loading');
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
-  const { movies, toneLabel, framingTemplate, isLoading, error, fetchRecommendations, retry } =
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { movies, toneLabel, framingTemplate, isLoading, error, fetchRecommendations, retry, refresh } =
     useRecommendations();
 
   useEffect(() => {
@@ -57,6 +58,10 @@ export default function ResultsPage() {
       // Show error after minimum load time
     }
   }, [isLoading, movies, error, phase]);
+
+  useEffect(() => {
+    if (!isLoading) setIsRefreshing(false);
+  }, [isLoading]);
 
   if (phase === 'loading') {
     return (
@@ -103,8 +108,15 @@ export default function ResultsPage() {
           framingTemplate={framingTemplate}
         />
 
-        {/* Retake link */}
-        <div className="flex justify-center pt-8 pb-4">
+        {/* Actions */}
+        <div className="flex flex-wrap justify-center gap-4 pt-8 pb-4">
+          <Button
+            variant="ghost"
+            onClick={() => { setIsRefreshing(true); refresh(); }}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? 'Finding more...' : 'Show me different movies →'}
+          </Button>
           <Button
             variant="ghost"
             onClick={() => {
