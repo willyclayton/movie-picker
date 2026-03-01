@@ -113,13 +113,6 @@ export function MovieCard({ movie }: MovieCardProps) {
           </p>
         )}
 
-        {/* Framing label */}
-        {movie.framingLabel && (
-          <p className="text-muted text-xs font-sans italic leading-relaxed">
-            {movie.framingLabel}
-          </p>
-        )}
-
         {/* Streaming badges */}
         {movie.streamingInfo?.services && movie.streamingInfo.services.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-auto pt-1">

@@ -1,4 +1,4 @@
-import type { TMDBDiscoverParams, TMDBDiscoverResponse, TMDBMovie } from '@/types/tmdb';
+import type { TMDBDiscoverParams, TMDBDiscoverResponse, TMDBMovie, StreamingService } from '@/types/tmdb';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -48,7 +48,23 @@ type MovieExtras = {
   imdbId: string | null;
   trailerUrl: string | null;
   runtime: number | null;
+  watchProviders: StreamingService[];
 };
+
+function normalizeProviderName(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes('netflix')) return 'netflix';
+  if (n.includes('hulu')) return 'hulu';
+  if (n.includes('disney')) return 'disney';
+  if (n.includes('amazon') || n.includes('prime')) return 'amazon';
+  if (n.includes('max') || n.includes('hbo')) return 'max';
+  if (n.includes('apple')) return 'appletv';
+  if (n.includes('paramount')) return 'paramount';
+  if (n.includes('peacock')) return 'peacock';
+  if (n.includes('tubi')) return 'tubi';
+  if (n.includes('pluto')) return 'pluto';
+  return n;
+}
 
 /**
  * Fetch IMDB ID and official YouTube trailer for a movie in one call.
@@ -56,11 +72,11 @@ type MovieExtras = {
  */
 export async function getMovieExtras(id: number): Promise<MovieExtras> {
   const apiKey = getApiKey();
-  const url = `${BASE_URL}/movie/${id}?api_key=${apiKey}&append_to_response=external_ids,videos`;
+  const url = `${BASE_URL}/movie/${id}?api_key=${apiKey}&append_to_response=external_ids,videos,watch%2Fproviders`;
 
   try {
     const res = await fetch(url, { next: { revalidate: 86400 } });
-    if (!res.ok) return { imdbId: null, trailerUrl: null, runtime: null };
+    if (!res.ok) return { imdbId: null, trailerUrl: null, runtime: null, watchProviders: [] };
 
     const data = await res.json();
 
@@ -81,9 +97,17 @@ export async function getMovieExtras(id: number): Promise<MovieExtras> {
 
     const runtime: number | null = typeof data.runtime === 'number' ? data.runtime : null;
 
-    return { imdbId, trailerUrl, runtime };
+    const usProviders = data['watch/providers']?.results?.US ?? {};
+    const regionLink: string | undefined = usProviders.link;
+    const watchProviders: StreamingService[] = [
+      ...(usProviders.flatrate ?? []).map((p: { provider_name: string }) => ({ name: normalizeProviderName(p.provider_name), type: 'subscription' as const, link: regionLink })),
+      ...(usProviders.rent ?? []).map((p: { provider_name: string }) => ({ name: normalizeProviderName(p.provider_name), type: 'rent' as const, link: regionLink })),
+      ...(usProviders.buy ?? []).map((p: { provider_name: string }) => ({ name: normalizeProviderName(p.provider_name), type: 'buy' as const, link: regionLink })),
+    ].slice(0, 4);
+
+    return { imdbId, trailerUrl, runtime, watchProviders };
   } catch {
-    return { imdbId: null, trailerUrl: null, runtime: null };
+    return { imdbId: null, trailerUrl: null, runtime: null, watchProviders: [] };
   }
 }
 

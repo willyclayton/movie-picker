@@ -10,13 +10,14 @@ import type { QuizAnswer } from '@/types/quiz';
 import type { EnrichedMovie, TMDBMovie } from '@/types/tmdb';
 
 async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: string): Promise<EnrichedMovie> {
-  // Fetch TMDB extras (IMDB ID + trailer + runtime) and streaming in parallel
-  const [extras, streamingResult] = await Promise.all([
-    getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null, runtime: null })),
-    enrichWithStreaming([movie])
-      .then((r) => r[0]?.streamingInfo ?? null)
-      .catch(() => null),
-  ]);
+  // Fetch TMDB extras (IMDB ID + trailer + runtime + watch providers)
+  const extras = await getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null, runtime: null, watchProviders: [] }));
+
+  // Use TMDB watch providers as primary source; fall back to streaming API if empty
+  const streamingResult =
+    extras.watchProviders.length > 0
+      ? { services: extras.watchProviders }
+      : await enrichWithStreaming([movie]).then((r) => r[0]?.streamingInfo ?? null).catch(() => null);
 
   // Fetch RT scores if we have an IMDB ID and OMDB key
   const rtScores = extras.imdbId
