@@ -1,0 +1,111 @@
+import type { CircumplexQuadrant } from '@/types/quiz';
+
+export type QuadrantConfig = {
+  genreIds: number[];
+  toneLabel: string;
+  framingTemplate: string;
+  sortBy: string;
+};
+
+export const QUADRANT_MAP: Record<CircumplexQuadrant, QuadrantConfig> = {
+  intense: {
+    // valence < 0, arousal > 0
+    genreIds: [27, 53, 9648, 80], // Horror, Thriller, Mystery, Crime
+    toneLabel: 'unsettling',
+    framingTemplate: 'For when you need something that grabs you by the throat',
+    sortBy: 'popularity.desc',
+  },
+  exuberant: {
+    // valence > 0, arousal > 0
+    genreIds: [28, 35, 12, 878], // Action, Comedy, Adventure, Sci-Fi
+    toneLabel: 'propulsive',
+    framingTemplate: 'For when you want to feel alive',
+    sortBy: 'popularity.desc',
+  },
+  melancholic: {
+    // valence < 0, arousal < 0
+    genreIds: [18, 36, 99, 37], // Drama, History, Documentary, Western
+    toneLabel: 'melancholic',
+    framingTemplate: 'For when you want to sit with something real',
+    sortBy: 'vote_average.desc',
+  },
+  content: {
+    // valence > 0, arousal < 0
+    genreIds: [10749, 10751, 16, 14], // Romance, Family, Animation, Fantasy
+    toneLabel: 'warm',
+    framingTemplate: 'For when you need something that feels like home',
+    sortBy: 'vote_average.desc',
+  },
+};
+
+/**
+ * Determine the primary quadrant from a valence/arousal coordinate.
+ */
+export function getQuadrant(valence: number, arousal: number): CircumplexQuadrant {
+  if (valence >= 0 && arousal >= 0) return 'exuberant';
+  if (valence < 0 && arousal >= 0) return 'intense';
+  if (valence < 0 && arousal < 0) return 'melancholic';
+  return 'content';
+}
+
+// Axis boundary threshold for blending
+const BLEND_THRESHOLD = 0.2;
+
+export type GenreSelection = {
+  genreIds: number[];
+  toneLabel: string;
+  framingTemplate: string;
+  sortBy: string;
+  isBlended: boolean;
+};
+
+/**
+ * Returns genre selection, blending adjacent quadrants when near an axis.
+ * Near-axis coordinates get a 60/40 blend from two adjacent quadrant genre pools.
+ */
+export function selectGenres(valence: number, arousal: number): GenreSelection {
+  const nearValenceAxis = Math.abs(valence) < BLEND_THRESHOLD;
+  const nearArousalAxis = Math.abs(arousal) < BLEND_THRESHOLD;
+
+  const primary = getQuadrant(valence, arousal);
+  const primaryConfig = QUADRANT_MAP[primary];
+
+  if (!nearValenceAxis && !nearArousalAxis) {
+    return {
+      genreIds: primaryConfig.genreIds.slice(0, 3),
+      toneLabel: primaryConfig.toneLabel,
+      framingTemplate: primaryConfig.framingTemplate,
+      sortBy: primaryConfig.sortBy,
+      isBlended: false,
+    };
+  }
+
+  // Determine secondary quadrant
+  let secondary: CircumplexQuadrant;
+  if (nearValenceAxis && !nearArousalAxis) {
+    // Near valence axis — blend with quadrant on other side of valence
+    secondary = getQuadrant(-valence, arousal);
+  } else if (nearArousalAxis && !nearValenceAxis) {
+    // Near arousal axis — blend with quadrant on other side of arousal
+    secondary = getQuadrant(valence, -arousal);
+  } else {
+    // Near both axes — use opposite quadrant
+    secondary = getQuadrant(-valence, -arousal);
+  }
+
+  const secondaryConfig = QUADRANT_MAP[secondary];
+
+  // 60% primary, 40% secondary — take top genres from each
+  const primaryGenres = primaryConfig.genreIds.slice(0, 2);
+  const secondaryGenres = secondaryConfig.genreIds
+    .filter((id) => !primaryGenres.includes(id))
+    .slice(0, 2);
+
+  return {
+    genreIds: [...primaryGenres, ...secondaryGenres],
+    toneLabel: primaryConfig.toneLabel,
+    framingTemplate: primaryConfig.framingTemplate,
+    sortBy: primaryConfig.sortBy,
+    isBlended: true,
+  };
+}
