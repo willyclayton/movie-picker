@@ -57,6 +57,16 @@ export function shuffle<T>(arr: T[]): T[] {
 }
 
 /**
+ * Format runtime minutes as H:MM (e.g. 105 → "1:45").
+ */
+export function formatRuntime(minutes: number | null): string | null {
+  if (!minutes) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}` : `0:${String(m).padStart(2, '0')}`;
+}
+
+/**
  * Deduplicate an array of objects by a key function.
  */
 export function deduplicateBy<T>(arr: T[], keyFn: (item: T) => string | number): T[] {

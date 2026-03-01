@@ -3,16 +3,16 @@ import { computeFinalCoordinate } from '@/lib/circumplex';
 import { discoverMoviesMultiPage, getMovieExtras, resolveKeywordIds } from '@/lib/tmdb';
 import { enrichWithStreaming } from '@/lib/streaming';
 import { getRTScores } from '@/lib/omdb';
-import { selectGenres } from '@/data/circumplex';
+import { selectGenres, getDescriptors } from '@/data/circumplex';
 import { PLATFORMS } from '@/data/platforms';
 import { deduplicateBy, shuffle } from '@/lib/utils';
 import type { QuizAnswer } from '@/types/quiz';
 import type { EnrichedMovie, TMDBMovie } from '@/types/tmdb';
 
 async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: string): Promise<EnrichedMovie> {
-  // Fetch TMDB extras (IMDB ID + trailer) and streaming in parallel
+  // Fetch TMDB extras (IMDB ID + trailer + runtime) and streaming in parallel
   const [extras, streamingResult] = await Promise.all([
-    getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null })),
+    getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null, runtime: null })),
     enrichWithStreaming([movie])
       .then((r) => r[0]?.streamingInfo ?? null)
       .catch(() => null),
@@ -36,6 +36,8 @@ async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: st
     tomatometer: rtScores?.tomatometer ?? null,
     imdbScore: rtScores?.imdb ?? null,
     trailerUrl,
+    runtime: extras.runtime,
+    descriptors: getDescriptors(movie.genre_ids, toneLabel),
   };
 }
 
@@ -122,7 +124,7 @@ export async function POST(request: NextRequest) {
     // 11. Deduplicate and shuffle, take 10
     const unique = deduplicateBy(movies, (m) => m.id);
     const shuffled = shuffle(unique);
-    const selected = shuffled.slice(0, 10);
+    const selected = shuffled.slice(0, 20);
 
     // 12. Enrich all movies in parallel (TMDB extras + streaming + RT scores)
     const result = await Promise.all(

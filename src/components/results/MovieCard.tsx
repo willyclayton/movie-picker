@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { getTMDBImageUrl } from '@/lib/tmdb';
+import { formatRuntime } from '@/lib/utils';
 import { StreamingBadge } from './StreamingBadge';
 import { itemVariants, CINEMATIC_EASE } from '@/lib/animations';
 import type { EnrichedMovie } from '@/types/tmdb';
@@ -25,6 +26,7 @@ function TomatoIcon({ score }: { score: string }) {
 export function MovieCard({ movie }: MovieCardProps) {
   const posterUrl = getTMDBImageUrl(movie.poster_path, 'w342');
   const year = movie.release_date?.slice(0, 4) ?? '';
+  const runtime = formatRuntime(movie.runtime);
   const hasScores = movie.tomatometer || movie.imdbScore;
 
   return (
@@ -79,10 +81,17 @@ export function MovieCard({ movie }: MovieCardProps) {
           <h3 className="font-serif text-xl text-text font-light leading-tight group-hover:text-active transition-colors">
             {movie.title}
           </h3>
-          {year && (
-            <p className="text-muted text-xs font-sans mt-0.5">{year}</p>
-          )}
+          <p className="text-muted text-xs font-sans mt-0.5">
+            {[year, runtime].filter(Boolean).join(' · ')}
+          </p>
         </div>
+
+        {/* Descriptor words */}
+        {movie.descriptors && (
+          <p className="text-accent text-xs font-sans tracking-wide">
+            {movie.descriptors.join(' · ')}
+          </p>
+        )}
 
         {/* Scores row */}
         {hasScores && (
@@ -95,6 +104,13 @@ export function MovieCard({ movie }: MovieCardProps) {
               </span>
             )}
           </div>
+        )}
+
+        {/* Overview */}
+        {movie.overview && (
+          <p className="text-muted text-xs font-sans leading-relaxed line-clamp-3">
+            {movie.overview}
+          </p>
         )}
 
         {/* Framing label */}

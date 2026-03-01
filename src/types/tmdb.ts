@@ -39,6 +39,10 @@ export type EnrichedMovie = TMDBMovie & {
   imdbScore: string | null;     // e.g. "8.5"
   // Trailer — YouTube URL if found, null otherwise
   trailerUrl: string | null;
+  // Runtime in minutes (from TMDB details)
+  runtime: number | null;
+  // 3 mood descriptor words derived from genre + tone
+  descriptors: [string, string, string];
 };
 
 export type StreamingResult = {

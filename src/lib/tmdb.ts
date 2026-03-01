@@ -47,6 +47,7 @@ export async function discoverMoviesMultiPage(
 type MovieExtras = {
   imdbId: string | null;
   trailerUrl: string | null;
+  runtime: number | null;
 };
 
 /**
@@ -59,7 +60,7 @@ export async function getMovieExtras(id: number): Promise<MovieExtras> {
 
   try {
     const res = await fetch(url, { next: { revalidate: 86400 } });
-    if (!res.ok) return { imdbId: null, trailerUrl: null };
+    if (!res.ok) return { imdbId: null, trailerUrl: null, runtime: null };
 
     const data = await res.json();
 
@@ -78,9 +79,11 @@ export async function getMovieExtras(id: number): Promise<MovieExtras> {
       ? `https://www.youtube.com/watch?v=${trailer.key}`
       : null;
 
-    return { imdbId, trailerUrl };
+    const runtime: number | null = typeof data.runtime === 'number' ? data.runtime : null;
+
+    return { imdbId, trailerUrl, runtime };
   } catch {
-    return { imdbId: null, trailerUrl: null };
+    return { imdbId: null, trailerUrl: null, runtime: null };
   }
 }
 
