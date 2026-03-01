@@ -14,6 +14,7 @@ export default function ResultsPage() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>('loading');
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>([]);
   const { movies, toneLabel, framingTemplate, isLoading, error, fetchRecommendations, retry } =
     useRecommendations();
 
@@ -30,8 +31,11 @@ export default function ResultsPage() {
         router.replace('/quiz');
         return;
       }
+      const rawPlatforms = localStorage.getItem('moviePickerPlatforms');
+      const savedPlatforms: string[] = rawPlatforms ? JSON.parse(rawPlatforms) : [];
       setAnswers(parsed);
-      fetchRecommendations(parsed);
+      setPlatforms(savedPlatforms);
+      fetchRecommendations(parsed, savedPlatforms);
     } catch {
       router.replace('/quiz');
     }
@@ -76,7 +80,7 @@ export default function ResultsPage() {
               variant="primary"
               onClick={() => {
                 setPhase('loading');
-                retry(answers);
+                retry(answers, platforms);
               }}
             >
               Try again

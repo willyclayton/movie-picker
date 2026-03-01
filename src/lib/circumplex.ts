@@ -44,7 +44,10 @@ export function applyMoodCounter(coord: { valence: number; arousal: number }): {
  */
 export function extractCoordinates(answers: QuizAnswer[]): MoodCoordinate[] {
   return answers
-    .filter((a): a is Exclude<QuizAnswer, { type: 'meta' }> => a.type !== 'meta')
+    .filter(
+      (a): a is Exclude<QuizAnswer, { type: 'meta' } | { type: 'keywords' }> =>
+        a.type !== 'meta' && a.type !== 'keywords'
+    )
     .map((a) => a.coord);
 }
 

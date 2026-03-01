@@ -1,5 +1,6 @@
 import { HeroSection } from '@/components/landing/HeroSection';
 import { EnterButton } from '@/components/landing/EnterButton';
+import { PlatformPicker } from '@/components/landing/PlatformPicker';
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <div className="relative z-10 flex flex-col items-center gap-12">
         <HeroSection />
         <EnterButton />
+        <PlatformPicker />
       </div>
 
       {/* Footer hint */}

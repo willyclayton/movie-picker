@@ -1,11 +1,13 @@
 'use client';
 
+import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { stepVariants } from '@/lib/animations';
 import { QuizProgressBar } from './QuizProgressBar';
 import { StepColorPicker } from './StepColorPicker';
 import { StepImageSelector } from './StepImageSelector';
 import { StepProjectiveQ } from './StepProjectiveQ';
+import { StepKeywords } from './StepKeywords';
 import { StepMetaPref } from './StepMetaPref';
 import { Button } from '@/components/ui/Button';
 import type { QuizAnswer } from '@/types/quiz';
@@ -16,7 +18,16 @@ type QuizShellProps = {
   onBack: () => void;
 };
 
-const STEPS = [StepColorPicker, StepImageSelector, StepProjectiveQ, StepMetaPref];
+type StepProps = { onComplete: (answer: QuizAnswer) => void };
+
+const STEPS: ((props: StepProps) => React.ReactElement)[] = [
+  (props) => <StepColorPicker {...props} />,
+  (props) => <StepImageSelector {...props} />,
+  (props) => <StepProjectiveQ {...props} questionIndex={0} />,
+  (props) => <StepProjectiveQ {...props} questionIndex={1} />,
+  (props) => <StepKeywords {...props} />,
+  (props) => <StepMetaPref {...props} />,
+];
 
 export function QuizShell({ currentStep, onAnswer, onBack }: QuizShellProps) {
   const StepComponent = STEPS[currentStep];
@@ -54,7 +65,7 @@ export function QuizShell({ currentStep, onAnswer, onBack }: QuizShellProps) {
 
       {/* Step counter */}
       <p className="text-center text-muted text-xs font-sans mt-8">
-        {currentStep + 1} of 4
+        {currentStep + 1} of 6
       </p>
     </div>
   );

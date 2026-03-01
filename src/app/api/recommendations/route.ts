@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { computeFinalCoordinate } from '@/lib/circumplex';
-import { discoverMoviesMultiPage, getMovieExtras } from '@/lib/tmdb';
+import { discoverMoviesMultiPage, getMovieExtras, resolveKeywordIds } from '@/lib/tmdb';
 import { enrichWithStreaming } from '@/lib/streaming';
 import { getRTScores } from '@/lib/omdb';
 import { selectGenres } from '@/data/circumplex';
+import { PLATFORMS } from '@/data/platforms';
 import { deduplicateBy, shuffle } from '@/lib/utils';
 import type { QuizAnswer } from '@/types/quiz';
 import type { EnrichedMovie, TMDBMovie } from '@/types/tmdb';
@@ -42,6 +43,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const answers: QuizAnswer[] = body.answers ?? [];
+    const platforms: string[] = body.platforms ?? [];
+    const providerIds = platforms
+      .map((key) => PLATFORMS.find((p) => p.key === key)?.providerId)
+      .filter((id): id is number => id !== undefined);
 
     if (!answers.length) {
       return NextResponse.json({ error: 'No answers provided' }, { status: 400 });
@@ -56,18 +61,54 @@ export async function POST(request: NextRequest) {
     // 3. Determine quality threshold based on arousal
     const voteAvgThreshold = arousal < -0.3 ? 7.0 : 6.0;
 
-    // 4. Build TMDB discover params
+    // 4. Resolve user keyword terms to TMDB keyword IDs
+    const keywordAnswer = answers.find((a) => a.type === 'keywords');
+    const keywordTerms = keywordAnswer?.type === 'keywords' ? keywordAnswer.selected : [];
+    const keywordIds = await resolveKeywordIds(keywordTerms);
+
+    // 5. Build provider filter (only when platforms are selected)
+    const providerFilter =
+      providerIds.length > 0
+        ? { with_watch_providers: providerIds.join('|'), watch_region: 'US' }
+        : {};
+
+    // 6. Build TMDB discover params
     const discoverParams = {
       with_genres: genreIds.slice(0, 3).join('|'),
       sort_by: sortBy,
       'vote_average.gte': voteAvgThreshold,
       'vote_count.gte': 50,
+      ...(keywordIds.length > 0 && { with_keywords: keywordIds.join('|') }),
+      ...providerFilter,
     };
 
-    // 5. Fetch pages 1–3 in parallel
+    // 7. Fetch pages 1–3 in parallel
     let movies = await discoverMoviesMultiPage(discoverParams, 3);
 
-    // 6. Fallback: if < 5 results, retry with just top 2 genres, lower threshold
+    // 8. Fallback tier 1: if < 5 results and keywords were applied, retry without keywords (keep providers)
+    if (movies.length < 5 && keywordIds.length > 0) {
+      const noKeywordParams = {
+        with_genres: genreIds.slice(0, 3).join('|'),
+        sort_by: sortBy,
+        'vote_average.gte': voteAvgThreshold,
+        'vote_count.gte': 50,
+        ...providerFilter,
+      };
+      movies = await discoverMoviesMultiPage(noKeywordParams, 3);
+    }
+
+    // 9. Fallback tier 2: if still < 5 and providers were set, retry without providers
+    if (movies.length < 5 && providerIds.length > 0) {
+      const noProviderParams = {
+        with_genres: genreIds.slice(0, 3).join('|'),
+        sort_by: sortBy,
+        'vote_average.gte': voteAvgThreshold,
+        'vote_count.gte': 50,
+      };
+      movies = await discoverMoviesMultiPage(noProviderParams, 3);
+    }
+
+    // 10. Fallback tier 3: if still < 5, retry with fewer genres and lower thresholds
     if (movies.length < 5) {
       const fallbackParams = {
         with_genres: genreIds.slice(0, 2).join('|'),
@@ -78,12 +119,12 @@ export async function POST(request: NextRequest) {
       movies = await discoverMoviesMultiPage(fallbackParams, 2);
     }
 
-    // 7. Deduplicate and shuffle, take 10
+    // 11. Deduplicate and shuffle, take 10
     const unique = deduplicateBy(movies, (m) => m.id);
     const shuffled = shuffle(unique);
     const selected = shuffled.slice(0, 10);
 
-    // 8. Enrich all movies in parallel (TMDB extras + streaming + RT scores)
+    // 12. Enrich all movies in parallel (TMDB extras + streaming + RT scores)
     const result = await Promise.all(
       selected.map((movie) => enrichMovie(movie, toneLabel, framingTemplate))
     );

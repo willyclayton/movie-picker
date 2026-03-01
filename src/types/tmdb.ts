@@ -12,12 +12,15 @@ export type TMDBMovie = {
 
 export type TMDBDiscoverParams = {
   with_genres?: string;
+  with_keywords?: string;
   sort_by?: string;
   'vote_average.gte'?: number;
   'vote_count.gte'?: number;
   page?: number;
   language?: string;
   include_adult?: boolean;
+  with_watch_providers?: string;
+  watch_region?: string;
 };
 
 export type TMDBDiscoverResponse = {

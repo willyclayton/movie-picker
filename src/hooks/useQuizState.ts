@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import type { QuizAnswer, QuizState, MoodCoordinate } from '@/types/quiz';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 6;
 
 export function useQuizState() {
   const [state, setState] = useState<QuizState>({
@@ -14,7 +14,15 @@ export function useQuizState() {
 
   const submitAnswer = useCallback((answer: QuizAnswer) => {
     setState((prev) => {
-      const answers = [...prev.answers.filter((a) => a.type !== answer.type), answer];
+      const answers =
+        answer.type === 'projective'
+          ? [
+              ...prev.answers.filter(
+                (a) => !(a.type === 'projective' && (a as { type: 'projective'; questionId: string }).questionId === (answer as { type: 'projective'; questionId: string }).questionId)
+              ),
+              answer,
+            ]
+          : [...prev.answers.filter((a) => a.type !== answer.type), answer];
       const nextStep = prev.currentStep + 1;
       const isComplete = nextStep >= TOTAL_STEPS;
       return {
@@ -45,6 +53,8 @@ export function useQuizState() {
  */
 export function extractCoordinates(answers: QuizAnswer[]): MoodCoordinate[] {
   return answers
-    .filter((a): a is Exclude<QuizAnswer, { type: 'meta' }> => a.type !== 'meta')
+    .filter((a): a is Exclude<QuizAnswer, { type: 'meta' } | { type: 'keywords' }> =>
+      a.type !== 'meta' && a.type !== 'keywords'
+    )
     .map((a) => a.coord);
 }

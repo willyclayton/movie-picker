@@ -3,16 +3,17 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { containerVariants, itemVariants, CINEMATIC_EASE } from '@/lib/animations';
-import { ACTIVE_QUESTION } from '@/data/questions';
+import { PROJECTIVE_QUESTIONS } from '@/data/questions';
 import type { QuizAnswer } from '@/types/quiz';
 
 type StepProjectiveQProps = {
   onComplete: (answer: QuizAnswer) => void;
+  questionIndex?: number;
 };
 
-export function StepProjectiveQ({ onComplete }: StepProjectiveQProps) {
+export function StepProjectiveQ({ onComplete, questionIndex = 0 }: StepProjectiveQProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const question = ACTIVE_QUESTION;
+  const question = PROJECTIVE_QUESTIONS[questionIndex];
 
   function handleSelect(optionId: string) {
     setSelected(optionId);

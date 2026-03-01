@@ -84,6 +84,27 @@ export async function getMovieExtras(id: number): Promise<MovieExtras> {
   }
 }
 
+export async function resolveKeywordIds(terms: string[]): Promise<number[]> {
+  if (!terms.length) return [];
+  const apiKey = getApiKey();
+  const results = await Promise.all(
+    terms.map(async (term) => {
+      try {
+        const res = await fetch(
+          `${BASE_URL}/search/keyword?api_key=${apiKey}&query=${encodeURIComponent(term)}`,
+          { next: { revalidate: 86400 } }
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        return (data.results?.[0]?.id as number) ?? null;
+      } catch {
+        return null;
+      }
+    })
+  );
+  return results.filter((id): id is number => id !== null);
+}
+
 export function getTMDBImageUrl(
   path: string | null,
   size: 'w342' | 'w500' | 'w780' | 'original' = 'w500'

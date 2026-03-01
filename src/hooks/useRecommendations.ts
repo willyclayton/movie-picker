@@ -21,14 +21,14 @@ export function useRecommendations() {
     error: null,
   });
 
-  const fetchRecommendations = useCallback(async (answers: QuizAnswer[]) => {
+  const fetchRecommendations = useCallback(async (answers: QuizAnswer[], platforms?: string[]) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const response = await fetch('/api/recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers, platforms }),
       });
 
       if (!response.ok) {
@@ -54,7 +54,7 @@ export function useRecommendations() {
   }, []);
 
   const retry = useCallback(
-    (answers: QuizAnswer[]) => fetchRecommendations(answers),
+    (answers: QuizAnswer[], platforms?: string[]) => fetchRecommendations(answers, platforms),
     [fetchRecommendations]
   );
 

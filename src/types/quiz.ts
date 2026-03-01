@@ -8,6 +8,7 @@ export type QuizAnswer =
   | { type: 'color'; selectedColors: string[]; coord: MoodCoordinate }
   | { type: 'image'; imageId: string; coord: MoodCoordinate }
   | { type: 'projective'; questionId: string; optionId: string; coord: MoodCoordinate }
+  | { type: 'keywords'; selected: string[] }
   | { type: 'meta'; preference: 'lean-in' | 'escape' };
 
 export type CircumplexQuadrant = 'intense' | 'exuberant' | 'melancholic' | 'content';
