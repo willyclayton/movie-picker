@@ -1,5 +1,47 @@
 import type { CircumplexQuadrant } from '@/types/quiz';
 
+export const GENRE_COORD_MAP: Record<number, { valence: number; arousal: number }> = {
+  // intense (valence < 0, arousal > 0)
+  27: { valence: -0.5, arousal: 0.5 },   // Horror
+  53: { valence: -0.5, arousal: 0.5 },   // Thriller
+  9648: { valence: -0.5, arousal: 0.5 }, // Mystery
+  80: { valence: -0.5, arousal: 0.5 },   // Crime
+  // exuberant (valence > 0, arousal > 0)
+  28: { valence: 0.5, arousal: 0.5 },    // Action
+  35: { valence: 0.5, arousal: 0.5 },    // Comedy
+  12: { valence: 0.5, arousal: 0.5 },    // Adventure
+  878: { valence: 0.5, arousal: 0.5 },   // Sci-Fi
+  // melancholic (valence < 0, arousal < 0)
+  18: { valence: -0.5, arousal: -0.5 },  // Drama
+  36: { valence: -0.5, arousal: -0.5 },  // History
+  99: { valence: -0.5, arousal: -0.5 },  // Documentary
+  37: { valence: -0.5, arousal: -0.5 },  // Western
+  // content (valence > 0, arousal < 0)
+  10749: { valence: 0.5, arousal: -0.5 },// Romance
+  10751: { valence: 0.5, arousal: -0.5 },// Family
+  16: { valence: 0.5, arousal: -0.5 },   // Animation
+  14: { valence: 0.5, arousal: -0.5 },   // Fantasy
+};
+
+export function scoreMovieProximity(
+  genreIds: number[],
+  userCoord: { valence: number; arousal: number },
+  isKeywordMatch: boolean
+): number {
+  const known = genreIds.map((id) => GENRE_COORD_MAP[id]).filter(Boolean);
+  const avg =
+    known.length > 0
+      ? {
+          valence: known.reduce((s, c) => s + c.valence, 0) / known.length,
+          arousal: known.reduce((s, c) => s + c.arousal, 0) / known.length,
+        }
+      : { valence: 0, arousal: 0 };
+  const dist = Math.sqrt(
+    (avg.valence - userCoord.valence) ** 2 + (avg.arousal - userCoord.arousal) ** 2
+  );
+  return isKeywordMatch ? dist - 0.35 : dist;
+}
+
 export type QuadrantConfig = {
   genreIds: number[];
   toneLabel: string;

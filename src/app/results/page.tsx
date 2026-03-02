@@ -6,6 +6,7 @@ import { LoadingTransition } from '@/components/results/LoadingTransition';
 import { ResultsGrid } from '@/components/results/ResultsGrid';
 import { QuadrantViz } from '@/components/results/QuadrantViz';
 import { Button } from '@/components/ui/Button';
+import { PageNav } from '@/components/ui/PageNav';
 import { useRecommendations } from '@/hooks/useRecommendations';
 import type { QuizAnswer } from '@/types/quiz';
 
@@ -79,6 +80,9 @@ export default function ResultsPage() {
   if (phase === 'error' || error) {
     return (
       <main className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-6">
+        <div className="absolute top-6 left-6 right-6 max-w-6xl mx-auto">
+          <PageNav />
+        </div>
         <div className="text-center flex flex-col gap-4 max-w-md">
           <h2 className="font-serif text-3xl text-text font-light">Something went sideways.</h2>
           <p className="text-muted text-sm font-sans">{error ?? 'Unable to load recommendations.'}</p>
@@ -104,6 +108,7 @@ export default function ResultsPage() {
   return (
     <main className="min-h-screen bg-background px-6 py-16">
       <div className="max-w-6xl mx-auto flex flex-col gap-12">
+        <PageNav />
         <ResultsGrid
           movies={movies}
           toneLabel={toneLabel}

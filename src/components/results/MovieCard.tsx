@@ -27,7 +27,7 @@ export function MovieCard({ movie }: MovieCardProps) {
   const posterUrl = getTMDBImageUrl(movie.poster_path, 'w342');
   const year = movie.release_date?.slice(0, 4) ?? '';
   const runtime = formatRuntime(movie.runtime);
-  const hasScores = movie.tomatometer || movie.imdbScore;
+  const hasScores = movie.tomatometer || movie.audienceScore || movie.imdbScore;
 
   return (
     <motion.article
@@ -97,6 +97,12 @@ export function MovieCard({ movie }: MovieCardProps) {
         {hasScores && (
           <div className="flex items-center gap-3 text-xs font-sans">
             {movie.tomatometer && <TomatoIcon score={movie.tomatometer} />}
+            {movie.audienceScore && (
+              <span className="flex items-center gap-1 text-muted" title="RT Audience Score">
+                <span>🍿</span>
+                <span>{movie.audienceScore}</span>
+              </span>
+            )}
             {movie.imdbScore && (
               <span className="flex items-center gap-1 text-muted" title="IMDB rating">
                 <span className="text-yellow-400">★</span>

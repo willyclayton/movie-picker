@@ -3,9 +3,9 @@ import { computeFinalCoordinate } from '@/lib/circumplex';
 import { discoverMoviesMultiPage, getMovieExtras, resolveKeywordIds } from '@/lib/tmdb';
 import { enrichWithStreaming } from '@/lib/streaming';
 import { getRTScores } from '@/lib/omdb';
-import { selectGenres, getDescriptors } from '@/data/circumplex';
+import { selectGenres, getDescriptors, scoreMovieProximity } from '@/data/circumplex';
 import { PLATFORMS } from '@/data/platforms';
-import { deduplicateBy, shuffle } from '@/lib/utils';
+import { deduplicateBy } from '@/lib/utils';
 import type { QuizAnswer } from '@/types/quiz';
 import type { EnrichedMovie, TMDBMovie } from '@/types/tmdb';
 
@@ -41,6 +41,7 @@ async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: st
     streamingInfo: streamingResult,
     tomatometer: rtScores?.tomatometer ?? null,
     imdbScore: rtScores?.imdb ?? null,
+    audienceScore: rtScores?.audienceScore ?? null,
     trailerUrl,
     runtime: extras.runtime,
     descriptors: getDescriptors(movie.genre_ids, toneLabel),
@@ -92,9 +93,12 @@ export async function POST(request: NextRequest) {
     };
 
     // 7. Fetch pages 1–3 in parallel (offset by pageOffset for refresh)
-    let movies = await discoverMoviesMultiPage(discoverParams, 3, 1 + pageOffset);
+    const keywordMatchedIds = new Set<number>();
+    const primaryMovies = await discoverMoviesMultiPage(discoverParams, 3, 1 + pageOffset);
+    primaryMovies.forEach((m) => keywordMatchedIds.add(m.id));
+    let movies = primaryMovies;
 
-    // 8. Fallback tier 1: if < 10 results and keywords were applied, retry without keywords (keep providers)
+    // 8. Fallback tier 1: if < 10 results and keywords were applied, supplement without keywords (keep providers)
     if (movies.length < 10 && keywordIds.length > 0) {
       const noKeywordParams = {
         with_genres: genreIds.slice(0, 3).join('|'),
@@ -103,7 +107,8 @@ export async function POST(request: NextRequest) {
         'vote_count.gte': 50,
         ...providerFilter,
       };
-      movies = await discoverMoviesMultiPage(noKeywordParams, 3);
+      const supplemental = await discoverMoviesMultiPage(noKeywordParams, 3);
+      movies = [...movies, ...supplemental];
     }
 
     // 9. Fallback tier 2: if still < 10 and providers were set, retry without providers
@@ -114,7 +119,8 @@ export async function POST(request: NextRequest) {
         'vote_average.gte': voteAvgThreshold,
         'vote_count.gte': 50,
       };
-      movies = await discoverMoviesMultiPage(noProviderParams, 3);
+      const supplemental = await discoverMoviesMultiPage(noProviderParams, 3);
+      movies = [...movies, ...supplemental];
     }
 
     // 10. Fallback tier 3: if still < 10, retry with fewer genres and lower thresholds
@@ -125,13 +131,18 @@ export async function POST(request: NextRequest) {
         'vote_average.gte': 5.5,
         'vote_count.gte': 30,
       };
-      movies = await discoverMoviesMultiPage(fallbackParams, 2);
+      const supplemental = await discoverMoviesMultiPage(fallbackParams, 2);
+      movies = [...movies, ...supplemental];
     }
 
-    // 11. Deduplicate and shuffle, take 10
+    // 11. Deduplicate, sort by emotional proximity, take 20
     const unique = deduplicateBy(movies, (m) => m.id);
-    const shuffled = shuffle(unique);
-    const selected = shuffled.slice(0, 20);
+    const scored = unique.map((m) => ({
+      movie: m,
+      score: scoreMovieProximity(m.genre_ids, { valence, arousal }, keywordMatchedIds.has(m.id)),
+    }));
+    scored.sort((a, b) => a.score - b.score);
+    const selected = scored.map((s) => s.movie).slice(0, 20);
 
     // 12. Enrich all movies in parallel (TMDB extras + streaming + RT scores)
     const result = await Promise.all(

@@ -37,6 +37,7 @@ export type EnrichedMovie = TMDBMovie & {
   // RT / IMDB scores (populated if OMDB_API_KEY is set)
   tomatometer: string | null;   // e.g. "94%"
   imdbScore: string | null;     // e.g. "8.5"
+  audienceScore: string | null; // e.g. "88%" — RT audience score
   // Trailer — YouTube URL if found, null otherwise
   trailerUrl: string | null;
   // Runtime in minutes (from TMDB details)

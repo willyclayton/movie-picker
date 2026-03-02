@@ -10,6 +10,7 @@ import { StepProjectiveQ } from './StepProjectiveQ';
 import { StepKeywords } from './StepKeywords';
 import { StepMetaPref } from './StepMetaPref';
 import { Button } from '@/components/ui/Button';
+import { PageNav } from '@/components/ui/PageNav';
 import type { QuizAnswer } from '@/types/quiz';
 
 type QuizShellProps = {
@@ -35,6 +36,11 @@ export function QuizShell({ currentStep, onAnswer, onBack }: QuizShellProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background px-6 py-10">
+      {/* Nav */}
+      <div className="max-w-2xl mx-auto w-full mb-4">
+        <PageNav />
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between max-w-2xl mx-auto w-full mb-12">
         {currentStep > 0 ? (
