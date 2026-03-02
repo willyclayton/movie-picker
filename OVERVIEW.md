@@ -25,12 +25,15 @@ Every quiz answer produces a coordinate on this 2D plane. The four quadrants map
 | Low arousal, negative valence | Melancholic | Drama, Art House, History |
 | Low arousal, positive valence | Content / Warm | Romance, Animation, Fantasy |
 
-The quiz has four steps, each adding signal with different weights:
+The quiz has seven steps, each adding signal with different weights:
 
 1. **Color picker** — selects up to 5 colors from a palette mapped to valence/arousal via empirical color-emotion research (132 studies, 42,000+ participants). Saturation acts as a confidence weight.
-2. **Image selector** — 10 photos pre-scored using OASIS (Open Affective Standardized Image Set) normative data. User picks one instinctively.
-3. **Projective question** — a metaphor question ("pick a weather") drawn from validated projective psychology techniques. Disambiguates edge cases.
-4. **Meta-preference toggle** — "Lean into how I feel" vs. "Take me somewhere else." Choosing escape flips the valence sign, routing to the opposite emotional quadrant.
+2. **Image selector** — 15 photos pre-scored using OASIS (Open Affective Standardized Image Set) normative data, covering all four quadrants. User picks one instinctively.
+3. **Projective question: weather** — "Pick a weather." A metaphor prompt drawn from validated projective psychology techniques.
+4. **Projective question: animal** — "What animal are you right now?" Disambiguates high/low arousal edges.
+5. **Projective question: texture** — "If your mood had a texture…" Captures valence nuance (sharp vs. smooth).
+6. **Keywords** — Optional free-text tags ("slow burn", "feel-good") that nudge the TMDB discovery query without overriding the coordinate.
+7. **Meta-preference toggle** — "Lean into how I feel" vs. "Take me somewhere else." Choosing escape flips the valence sign, routing to the opposite emotional quadrant.
 
 All coordinates are weighted-averaged into a final position. If the result lands near an axis boundary, genre sets from adjacent quadrants are blended 60/40 to reflect ambiguity.
 
@@ -42,8 +45,9 @@ All coordinates are weighted-averaged into a final position. If the result lands
 - **TypeScript** throughout
 - **Tailwind CSS v4** — custom dark design tokens, rounded everywhere (angular shapes prime threat vigilance per affective priming research)
 - **Framer Motion** — step transitions, staggered reveals, loading animation
-- **TMDB API** — movie discovery and poster images
-- **Streaming Availability API** — shows which platform each film is on
+- **TMDB API** — movie discovery, poster images, watch providers, trailers
+- **OMDB API** (optional) — Rotten Tomatoes, IMDB, and audience scores
+- **Streaming API** (fallback) — supplements TMDB watch providers when needed
 
 ---
 
