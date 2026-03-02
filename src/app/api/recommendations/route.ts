@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       with_genres: genreIds.slice(0, 3).join('|'),
       sort_by: sortBy,
       'vote_average.gte': voteAvgThreshold,
-      'vote_count.gte': 50,
+      'vote_count.gte': providerIds.length > 0 ? 50 : 200,
       ...(keywordIds.length > 0 && { with_keywords: keywordIds.join('|') }),
       ...providerFilter,
     };

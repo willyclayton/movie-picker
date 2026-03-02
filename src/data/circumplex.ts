@@ -12,13 +12,13 @@ const GENRE_COORD_MAP: Record<number, { valence: number; arousal: number }> = {
   878:   { valence:  0.05, arousal:  0.65 }, // Sci-Fi
   18:    { valence: -0.42, arousal: -0.22 }, // Drama
   36:    { valence: -0.18, arousal: -0.35 }, // History
-  99:    { valence:  0.12, arousal: -0.28 }, // Documentary
+  99:    { valence:  0.35, arousal: -0.40 }, // Documentary
   37:    { valence: -0.12, arousal:  0.28 }, // Western
-  10749: { valence:  0.78, arousal:  0.08 }, // Romance
-  10751: { valence:  0.70, arousal:  0.32 }, // Family
-  16:    { valence:  0.62, arousal:  0.44 }, // Animation
+  10749: { valence:  0.80, arousal: -0.30 }, // Romance
+  10751: { valence:  0.65, arousal: -0.15 }, // Family
+  16:    { valence:  0.60, arousal:  0.10 }, // Animation
   14:    { valence:  0.32, arousal:  0.52 }, // Fantasy
-  10402: { valence:  0.55, arousal:  0.38 }, // Music
+  10402: { valence:  0.58, arousal: -0.10 }, // Music
   10752: { valence: -0.52, arousal:  0.62 }, // War
 };
 
@@ -144,7 +144,7 @@ export const QUADRANT_MAP: Record<CircumplexQuadrant, QuadrantConfig> = {
   },
   content: {
     // valence > 0, arousal < 0
-    genreIds: [10749, 10751, 16, 14], // Romance, Family, Animation, Fantasy
+    genreIds: [10749, 10751, 10402, 16], // Romance, Family, Music, Animation
     toneLabel: 'warm',
     framingTemplate: 'For when you need something that feels like home',
     sortBy: 'vote_average.desc',
