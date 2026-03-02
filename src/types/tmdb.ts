@@ -8,6 +8,7 @@ export type TMDBMovie = {
   vote_average: number;
   vote_count: number;
   genre_ids: number[];
+  popularity: number;
 };
 
 export type TMDBDiscoverParams = {
@@ -44,6 +45,8 @@ export type EnrichedMovie = TMDBMovie & {
   runtime: number | null;
   // 3 mood descriptor words derived from genre + tone
   descriptors: [string, string, string];
+  // Per-movie circumplex coordinate (valence × arousal)
+  circumplex: { valence: number; arousal: number };
 };
 
 export type StreamingResult = {

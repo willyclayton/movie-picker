@@ -3,7 +3,7 @@ import { computeFinalCoordinate } from '@/lib/circumplex';
 import { discoverMoviesMultiPage, getMovieExtras, resolveKeywordIds } from '@/lib/tmdb';
 import { enrichWithStreaming } from '@/lib/streaming';
 import { getRTScores } from '@/lib/omdb';
-import { selectGenres, getDescriptors, scoreMovieProximity } from '@/data/circumplex';
+import { selectGenres, getDescriptors, scoreMovieProximity, computeMovieCoordinate } from '@/data/circumplex';
 import { PLATFORMS } from '@/data/platforms';
 import { deduplicateBy } from '@/lib/utils';
 import type { QuizAnswer } from '@/types/quiz';
@@ -11,7 +11,7 @@ import type { EnrichedMovie, TMDBMovie } from '@/types/tmdb';
 
 async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: string, selectedPlatforms: string[]): Promise<EnrichedMovie> {
   // Fetch TMDB extras (IMDB ID + trailer + runtime + watch providers)
-  const extras = await getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null, runtime: null, watchProviders: [] }));
+  const extras = await getMovieExtras(movie.id).catch(() => ({ imdbId: null, trailerUrl: null, runtime: null, watchProviders: [], keywords: [] }));
 
   // Filter providers to user's selected platforms (when any were selected)
   const filtered = selectedPlatforms.length > 0
@@ -45,6 +45,7 @@ async function enrichMovie(movie: TMDBMovie, toneLabel: string, framingLabel: st
     trailerUrl,
     runtime: extras.runtime,
     descriptors: getDescriptors(movie.genre_ids, toneLabel),
+    circumplex: computeMovieCoordinate(movie, extras.keywords),
   };
 }
 
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
     const unique = deduplicateBy(movies, (m) => m.id);
     const scored = unique.map((m) => ({
       movie: m,
-      score: scoreMovieProximity(m.genre_ids, { valence, arousal }, keywordMatchedIds.has(m.id)),
+      score: scoreMovieProximity(computeMovieCoordinate(m), { valence, arousal }, keywordMatchedIds.has(m.id)),
     }));
     scored.sort((a, b) => a.score - b.score);
     const selected = scored.map((s) => s.movie).slice(0, 20);

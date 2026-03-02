@@ -50,6 +50,7 @@ type MovieExtras = {
   trailerUrl: string | null;
   runtime: number | null;
   watchProviders: StreamingService[];
+  keywords: { id: number; name: string }[];
 };
 
 function normalizeProviderName(name: string): string {
@@ -73,11 +74,11 @@ function normalizeProviderName(name: string): string {
  */
 export async function getMovieExtras(id: number): Promise<MovieExtras> {
   const apiKey = getApiKey();
-  const url = `${BASE_URL}/movie/${id}?api_key=${apiKey}&append_to_response=external_ids,videos,watch%2Fproviders`;
+  const url = `${BASE_URL}/movie/${id}?api_key=${apiKey}&append_to_response=external_ids,videos,watch%2Fproviders,keywords`;
 
   try {
     const res = await fetch(url, { next: { revalidate: 86400 } });
-    if (!res.ok) return { imdbId: null, trailerUrl: null, runtime: null, watchProviders: [] };
+    if (!res.ok) return { imdbId: null, trailerUrl: null, runtime: null, watchProviders: [], keywords: [] };
 
     const data = await res.json();
 
@@ -111,9 +112,11 @@ export async function getMovieExtras(id: number): Promise<MovieExtras> {
       return true;
     }).slice(0, 4);
 
-    return { imdbId, trailerUrl, runtime, watchProviders };
+    const keywords: { id: number; name: string }[] = data.keywords?.keywords ?? [];
+
+    return { imdbId, trailerUrl, runtime, watchProviders, keywords };
   } catch {
-    return { imdbId: null, trailerUrl: null, runtime: null, watchProviders: [] };
+    return { imdbId: null, trailerUrl: null, runtime: null, watchProviders: [], keywords: [] };
   }
 }
 

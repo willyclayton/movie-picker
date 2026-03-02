@@ -19,27 +19,22 @@ const QUADRANT_COLORS = {
   content:    { base: 'rgba(15,50,30,0.35)',  active: 'rgba(15,50,30,0.6)'  },
 } as const;
 
-// Deterministic scatter within the active quadrant using Fibonacci-based offsets
-function getThumbnailPosition(
-  index: number,
-  quadrant: keyof typeof QUADRANT_COLORS
+// Map a movie's circumplex coordinate to a chart position, with a small
+// index-based jitter to prevent exact stacking of nearby movies.
+function getMoviePosition(
+  movie: EnrichedMovie,
+  index: number
 ): { left: string; top: string } {
-  // Use golden-ratio fractions so thumbnails spread without clustering
-  const nx = ((index * 0.618) % 0.76) + 0.12; // 0.12–0.88 within quadrant
-  const ny = ((index * 0.381) % 0.76) + 0.12;
-
-  let x: number, y: number;
-  if (quadrant === 'intense') {
-    x = nx * 50; y = ny * 50;
-  } else if (quadrant === 'exuberant') {
-    x = 50 + nx * 50; y = ny * 50;
-  } else if (quadrant === 'melancholic') {
-    x = nx * 50; y = 50 + ny * 50;
-  } else {
-    x = 50 + nx * 50; y = 50 + ny * 50;
-  }
-
-  return { left: `calc(${x}% - 16px)`, top: `calc(${y}% - 16px)` };
+  const { valence, arousal } = movie.circumplex;
+  const x = ((valence + 1) / 2) * 100;
+  const y = ((1 - arousal) / 2) * 100;
+  // Deterministic jitter: ±4px spread based on index
+  const jx = ((index * 7) % 9) - 4;
+  const jy = ((index * 13) % 9) - 4;
+  return {
+    left: `calc(${x}% - 16px + ${jx}px)`,
+    top:  `calc(${y}% - 16px + ${jy}px)`,
+  };
 }
 
 export function QuadrantViz({ coordinate, movies, toneLabel, framingTemplate }: Props) {
@@ -166,9 +161,9 @@ export function QuadrantViz({ coordinate, movies, toneLabel, framingTemplate }: 
           Calm
         </span>
 
-        {/* Movie poster thumbnails scattered in active quadrant */}
+        {/* Movie poster thumbnails at their actual circumplex coordinates */}
         {posterMovies.map((movie, index) => {
-          const pos = getThumbnailPosition(index, quadrant);
+          const pos = getMoviePosition(movie, index);
           const src = getTMDBImageUrl(movie.poster_path, 'w342');
           if (!src) return null;
           return (
