@@ -8,6 +8,7 @@ type RecommendationsState = {
   movies: EnrichedMovie[];
   toneLabel: string;
   framingTemplate: string;
+  coordinate: { valence: number; arousal: number } | null;
   isLoading: boolean;
   error: string | null;
 };
@@ -17,6 +18,7 @@ export function useRecommendations() {
     movies: [],
     toneLabel: '',
     framingTemplate: '',
+    coordinate: null,
     isLoading: false,
     error: null,
   });
@@ -47,6 +49,7 @@ export function useRecommendations() {
         movies: data.movies ?? [],
         toneLabel: data.toneLabel ?? '',
         framingTemplate: data.framingTemplate ?? '',
+        coordinate: data.coordinate ?? null,
         isLoading: false,
         error: null,
       });

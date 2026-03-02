@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingTransition } from '@/components/results/LoadingTransition';
 import { ResultsGrid } from '@/components/results/ResultsGrid';
+import { QuadrantViz } from '@/components/results/QuadrantViz';
 import { Button } from '@/components/ui/Button';
 import { useRecommendations } from '@/hooks/useRecommendations';
 import type { QuizAnswer } from '@/types/quiz';
@@ -16,7 +17,8 @@ export default function ResultsPage() {
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { movies, toneLabel, framingTemplate, isLoading, error, fetchRecommendations, retry, refresh } =
+  const [showQuadrant, setShowQuadrant] = useState(false);
+  const { movies, toneLabel, framingTemplate, coordinate, isLoading, error, fetchRecommendations, retry, refresh } =
     useRecommendations();
 
   useEffect(() => {
@@ -126,7 +128,19 @@ export default function ResultsPage() {
           >
             Not quite right? Retake the quiz →
           </Button>
+          <Button variant="ghost" onClick={() => setShowQuadrant((v) => !v)}>
+            {showQuadrant ? 'Hide quadrant ↑' : 'Show me the quadrant →'}
+          </Button>
         </div>
+
+        {showQuadrant && coordinate && (
+          <QuadrantViz
+            coordinate={coordinate}
+            movies={movies}
+            toneLabel={toneLabel}
+            framingTemplate={framingTemplate}
+          />
+        )}
       </div>
     </main>
   );
