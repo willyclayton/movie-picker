@@ -136,7 +136,7 @@ export const COLOR_SWATCHES: ColorSwatch[] = [
  * Given a hex color, returns saturation (0-1) as weight signal.
  * Higher saturation = stronger emotional signal.
  */
-export function getColorWeight(hex: string): number {
+function getColorWeight(hex: string): number {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;

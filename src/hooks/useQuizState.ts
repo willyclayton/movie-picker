@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { QuizAnswer, QuizState, MoodCoordinate } from '@/types/quiz';
+import type { QuizAnswer, QuizState } from '@/types/quiz';
 
 const TOTAL_STEPS = 7;
 
@@ -46,15 +46,4 @@ export function useQuizState() {
   }, []);
 
   return { state, submitAnswer, goBack, reset };
-}
-
-/**
- * Extract all MoodCoordinates from quiz answers (excluding meta answer).
- */
-export function extractCoordinates(answers: QuizAnswer[]): MoodCoordinate[] {
-  return answers
-    .filter((a): a is Exclude<QuizAnswer, { type: 'meta' } | { type: 'keywords' }> =>
-      a.type !== 'meta' && a.type !== 'keywords'
-    )
-    .map((a) => a.coord);
 }

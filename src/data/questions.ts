@@ -131,7 +131,3 @@ export const PROJECTIVE_QUESTIONS: ProjectiveQuestion[] = [
     ],
   },
 ];
-
-// Active question index (0 = weather, default)
-export const ACTIVE_QUESTION_INDEX = 0;
-export const ACTIVE_QUESTION = PROJECTIVE_QUESTIONS[ACTIVE_QUESTION_INDEX];

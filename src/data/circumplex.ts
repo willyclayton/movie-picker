@@ -1,7 +1,7 @@
 import type { CircumplexQuadrant } from '@/types/quiz';
 import type { TMDBMovie } from '@/types/tmdb';
 
-export const GENRE_COORD_MAP: Record<number, { valence: number; arousal: number }> = {
+const GENRE_COORD_MAP: Record<number, { valence: number; arousal: number }> = {
   27:    { valence: -0.75, arousal:  0.80 }, // Horror
   53:    { valence: -0.55, arousal:  0.72 }, // Thriller
   9648:  { valence: -0.25, arousal:  0.42 }, // Mystery
@@ -172,7 +172,7 @@ export type GenreSelection = {
   isBlended: boolean;
 };
 
-export const GENRE_DESCRIPTORS: Record<number, string> = {
+const GENRE_DESCRIPTORS: Record<number, string> = {
   28: 'Kinetic',
   12: 'Expansive',
   16: 'Enchanting',

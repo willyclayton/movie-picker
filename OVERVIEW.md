@@ -38,7 +38,7 @@ All coordinates are weighted-averaged into a final position. If the result lands
 
 ## Tech Stack
 
-- **Next.js 14** (App Router) — full-stack, API routes keep the TMDB key server-side
+- **Next.js 16** (App Router) — full-stack, API routes keep the TMDB key server-side
 - **TypeScript** throughout
 - **Tailwind CSS v4** — custom dark design tokens, rounded everywhere (angular shapes prime threat vigilance per affective priming research)
 - **Framer Motion** — step transitions, staggered reveals, loading animation
@@ -65,11 +65,11 @@ All coordinates are weighted-averaged into a final position. If the result lands
 
 ```
 Quiz answers → MoodCoordinate[] → weighted average → (valence, arousal)
-    → quadrant selection (with axis blending)
+    → quadrant + genre selection (with axis blending)
     → TMDB discover (3 pages, parallel)
-    → deduplicate + shuffle
-    → enrich with streaming availability
-    → results with tone labels
+    → deduplicate → score by circumplex proximity → top 20
+    → enrich: per-movie circumplex coord · streaming providers · RT/IMDB scores
+    → results with tone labels + QuadrantViz
 ```
 
 State is passed from quiz to results via `sessionStorage`. All TMDB calls are proxied through Next.js API routes so the key never reaches the client.
